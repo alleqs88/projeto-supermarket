@@ -1,8 +1,11 @@
 import pandas as pd
 
+from sqlalchemy import text
+
 from conexao import engine
 
 
+# Lendo os dados da camada Bronze
 consulta = """
 SELECT *
 FROM bronze.vendas;
@@ -14,6 +17,7 @@ print(df.head())
 
 print("\nInformações do DataFrame:")
 df.info()
+
 
 # Conversão das colunas numéricas
 colunas_numericas = [
@@ -27,7 +31,10 @@ colunas_numericas = [
 ]
 
 for coluna in colunas_numericas:
-    df[coluna] = pd.to_numeric(df[coluna], errors="coerce")
+    df[coluna] = pd.to_numeric(
+        df[coluna],
+        errors="coerce"
+    )
 
 df["quantity"] = pd.to_numeric(
     df["quantity"],
@@ -37,24 +44,29 @@ df["quantity"] = pd.to_numeric(
 print("\nTipos após conversão:")
 print(df.dtypes)
 
+
 # Conversão de data e hora
 df["date"] = pd.to_datetime(
     df["date"],
     errors="coerce"
 )
 
-
 df["time"] = pd.to_datetime(
     df["time"],
     format="%I:%M:%S %p",
     errors="coerce"
-).apply(lambda valor: valor.time() if pd.notna(valor) else None)
+).apply(
+    lambda valor: valor.time()
+    if pd.notna(valor)
+    else None
+)
 
 print("\nTipos após conversão de data e hora:")
 print(df.dtypes)
 
 print("\nValores nulos após as conversões:")
 print(df.isnull().sum())
+
 
 # Renomeando as colunas para o padrão da camada Silver
 df = df.rename(columns={
@@ -80,6 +92,7 @@ df = df.rename(columns={
 print("\nColunas após renomeação:")
 print(df.columns)
 
+
 # Validação dos valores calculados
 df["custo_calculado"] = (
     df["preco_unitario"] * df["quantidade"]
@@ -101,6 +114,7 @@ print(
     ].head()
 )
 
+
 # Verificando diferenças nos cálculos
 diferenca_custo = (
     df["custo_mercadoria"] - df["custo_calculado"]
@@ -116,20 +130,49 @@ print((diferenca_custo > 0.01).sum())
 print("\nRegistros com diferença no imposto:")
 print((diferenca_imposto > 0.01).sum())
 
+
 # Removendo colunas utilizadas apenas para validação
 df.drop(
-    columns=["custo_calculado", "imposto_calculado"],
+    columns=[
+        "custo_calculado",
+        "imposto_calculado"
+    ],
     inplace=True
 )
 
+
+# Verificando a dimensão final
 print("\nDimensão final do DataFrame:")
 print(df.shape)
+
 
 # Verificação de IDs duplicados
 ids_duplicados = df["id_venda"].duplicated().sum()
 
 print("\nQuantidade de IDs duplicados:")
 print(ids_duplicados)
+
+
+# Salvando a base tratada
+caminho_saida = "data/processed/vendas_tratadas.csv"
+
+df.to_csv(
+    caminho_saida,
+    index=False
+)
+
+print(
+    f"\nArquivo tratado salvo em: "
+    f"{caminho_saida}"
+)
+
+
+# Limpando os registros existentes da camada Silver
+with engine.begin() as conexao:
+    conexao.execute(
+        text("TRUNCATE TABLE silver.vendas;")
+    )
+
 
 # Carregando os dados tratados na camada Silver
 df.to_sql(
