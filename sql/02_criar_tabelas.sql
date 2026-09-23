@@ -1,7 +1,14 @@
+-- Criação dos schemas da arquitetura Medallion
+
+CREATE SCHEMA IF NOT EXISTS bronze;
+CREATE SCHEMA IF NOT EXISTS silver;
+CREATE SCHEMA IF NOT EXISTS gold;
+
+
 -- Tabela da camada Raw
 -- Armazena os dados originais do CSV sem tratamento
 
-CREATE TABLE raw_vendas (
+CREATE TABLE bronze.vendas (
     invoice_id VARCHAR(50),
     branch VARCHAR(10),
     city VARCHAR(100),
@@ -25,7 +32,7 @@ CREATE TABLE raw_vendas (
 -- Tabela da camada tratada
 -- Armazena os dados após limpeza, conversão e validação
 
-CREATE TABLE vendas_tratadas (
+CREATE TABLE silver.vendas (
     id_venda VARCHAR(50) PRIMARY KEY NOT NULL,
     filial VARCHAR(10) NOT NULL,
     cidade VARCHAR(100) NOT NULL,
