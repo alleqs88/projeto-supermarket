@@ -13,9 +13,15 @@ engine = create_engine(
     f"/{os.getenv('DB_BANCO')}"
 )
 
-try:
-    with engine.connect():
-        print("Conexão com PostgreSQL realizada com sucesso!")
 
-except Exception as erro:
-    print(f"Erro ao conectar: {erro}")
+def testar_conexao():
+    try:
+        with engine.connect():
+            print("Conexão com PostgreSQL realizada com sucesso!")
+
+    except Exception as erro:
+        print(f"Erro ao conectar: {erro}")
+
+
+if __name__ == "__main__":
+    testar_conexao()
